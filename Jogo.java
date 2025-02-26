@@ -48,7 +48,7 @@ public class Jogo extends JPanel implements KeyListener, Runnable {
 
         // Carrega a imagem de fundo
         try {
-            File file = new File("C:/Users/Ygor/Desktop/faculdade/Jogo/JOGO-EM-JAVA/rua.png");
+            File file = new File("rua.png");
             if (file.exists()) {
                 System.out.println("Arquivo encontrado: " + file.getAbsolutePath());
                 imagemFundo = new ImageIcon(file.getAbsolutePath()).getImage();
@@ -66,7 +66,7 @@ public class Jogo extends JPanel implements KeyListener, Runnable {
         }
 
         // Configura a janela maximizada
-        JFrame frame = new JFrame("Space Invaders - Com Fundo");
+        JFrame frame = new JFrame("Last Days");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(larguraTela - 100, alturaTela - 100); // Janela um pouco menor que a tela
         frame.setLocationRelativeTo(null); // Centraliza a janela
@@ -291,7 +291,7 @@ public class Jogo extends JPanel implements KeyListener, Runnable {
 class Jogador {
     private BufferedImage spritesheet; // Imagem completa do spritesheet
     private BufferedImage[] frames; // Array para armazenar os frames
-    private int frameAtual = 5; // Frame atual da animação (inicia parado)
+    private int frameAtual = 4; // Frame atual da animação (inicia parado, frame 4)
     private int larguraFrame, alturaFrame; // Largura e altura de cada frame
     private int x, y; // Posição do jogador
     private boolean atirando = false; // Indica se o jogador está atirando
@@ -305,6 +305,10 @@ class Jogador {
         try {
             // Carrega o spritesheet
             spritesheet = ImageIO.read(getClass().getResource(caminhoSpritesheet));
+            if (spritesheet == null) {
+                System.out.println("Erro: Spritesheet não carregado. Verifique o caminho: " + caminhoSpritesheet);
+                return;
+            }
             System.out.println("Spritesheet carregado com sucesso!");
 
             // Verifica o tamanho do spritesheet
@@ -319,14 +323,14 @@ class Jogador {
 
             for (int linha = 0; linha < linhas; linha++) {
                 for (int coluna = 0; coluna < colunas; coluna++) {
-                    int frameX = coluna * larguraFrame; // Renomeado para frameX
-                    int frameY = linha * alturaFrame;   // Renomeado para frameY
+                    int frameX = coluna * larguraFrame;
+                    int frameY = linha * alturaFrame;
 
                     // Verifica se as coordenadas estão dentro dos limites do spritesheet
                     if (frameX + larguraFrame <= larguraSpritesheet && frameY + alturaFrame <= alturaSpritesheet) {
                         int index = linha * colunas + coluna;
                         frames[index] = spritesheet.getSubimage(frameX, frameY, larguraFrame, alturaFrame);
-                        System.out.println("Frame " + index + " extraído com sucesso.");
+                        System.out.println("Frame " + index + " extraído com sucesso: " + frames[index]);
                     } else {
                         System.out.println("Erro: Frame " + (linha * colunas + coluna) + " está fora dos limites do spritesheet.");
                     }
@@ -338,18 +342,27 @@ class Jogador {
     }
 
     public void desenhar(Graphics g) {
-        // Desenha o frame atual
-        if (frames != null && frameAtual < frames.length && frames[frameAtual] != null) {
-            g.drawImage(frames[frameAtual], x, y, null);
-            System.out.println("Desenhando frame " + frameAtual + " na posição (" + x + ", " + y + ")");
-        } else {
-            System.out.println("Erro: Frame atual é nulo ou inválido.");
+        if (frames == null) {
+            System.out.println("Erro: Frames não foram carregados.");
+            return;
         }
+
+        if (frameAtual < 0 || frameAtual >= frames.length || frames[frameAtual] == null) {
+            System.out.println("Erro: Frame atual é nulo ou inválido. frameAtual = " + frameAtual);
+            return;
+        }
+
+        // Desenha o frame atual
+        g.drawImage(frames[frameAtual], x, y, null);
+        System.out.println("Desenhando frame " + frameAtual + " na posição (" + x + ", " + y + ")");
     }
 
     // Método para atualizar o frame da animação
     public void atualizarFrame(int direcao, boolean atirando) {
         this.atirando = atirando;
+
+        // Define o frame padrão como "parado" (frame 4)
+        frameAtual = 4;
 
         if (atirando) {
             // Atirando
@@ -373,10 +386,13 @@ class Jogador {
                 case KeyEvent.VK_DOWN:
                     frameAtual = 3; // Andando para baixo
                     break;
-                default:
-                    frameAtual = 5; // Parado
-                    break;
             }
+        }
+
+        // Verifica se o frameAtual está dentro dos limites
+        if (frameAtual < 0 || frameAtual >= frames.length) {
+            System.out.println("Erro: frameAtual fora dos limites. frameAtual = " + frameAtual);
+            frameAtual = 4; // Define o frame "parado" como fallback
         }
     }
 
