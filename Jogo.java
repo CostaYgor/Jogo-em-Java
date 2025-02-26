@@ -56,7 +56,6 @@ public class Jogo extends JPanel implements KeyListener {
             for (Projetil projetil : projeteis) {
                 projetil.atualizar();
             }
-            verificarColisoes();
         }
     }
 
