@@ -74,10 +74,16 @@ public class Jogo extends JPanel implements KeyListener, Runnable {
         frame.add(this);
         frame.setVisible(true);
 
-        // Inicializa o jogador com o spritesheet
-        int larguraJogador = 131; // Largura do jogador (frame)
-        int alturaJogador = 124; // Altura do jogador (frame)
-        jogador = new Jogador(larguraTela / 20, alturaTela / 2 - alturaJogador / 2, larguraJogador, alturaJogador, "jogador.png");
+        // Inicializa o jogador com as 6 imagens e tamanho reduzido em 30%
+        String[] caminhosImagens = {
+            "parado.png",
+            "atirando.png",
+            "andando_cima.png",
+            "andando_baixo.png",
+            "atirando_cima.png",
+            "atirando_baixo.png"
+        };
+        jogador = new Jogador(larguraTela / 20, alturaTela / 2 - 43, 131, 124, caminhosImagens); // Tamanho reduzido em 30%
 
         // Inicia a thread de atualização do jogo
         Thread thread = new Thread(this);
@@ -171,7 +177,7 @@ public class Jogo extends JPanel implements KeyListener, Runnable {
 
         // Verifica se o jogador pode disparar
         if (!emRecarga && tempoAtual - ultimoDisparo >= 500) { // 0,5 segundos entre disparos
-            projeteis.add(new Projetil(jogador.getX() + jogador.getLargura(), jogador.getY() + jogador.getAltura() / 2, 10, 10));
+            projeteis.add(new Projetil(jogador.getX() + jogador.getLargura(), jogador.getY() + jogador.getAltura() / 2, 5, 5)); // Projétil menor
             ultimoDisparo = tempoAtual;
             disparosRealizados++;
 
@@ -218,8 +224,8 @@ public class Jogo extends JPanel implements KeyListener, Runnable {
 
     private void spawnInimigos() {
         if (inimigos.size() < maxInimigos) {
-            int larguraInimigo = 50; // Largura do inimigo
-            int alturaInimigo = 50; // Altura do inimigo
+            int larguraInimigo = 35; // Largura do inimigo reduzida em 30%
+            int alturaInimigo = 35; // Altura do inimigo reduzida em 30%
 
             // Gera uma posição Y aleatória para o inimigo
             int y = random.nextInt(alturaTela - alturaInimigo);
@@ -289,99 +295,68 @@ public class Jogo extends JPanel implements KeyListener, Runnable {
 }
 
 class Jogador {
-    private BufferedImage spritesheet; // Imagem completa do spritesheet
-    private BufferedImage[] frames; // Array para armazenar os frames
-    private int frameAtual = 4; // Frame atual da animação (inicia parado, frame 4)
-    private int larguraFrame, alturaFrame; // Largura e altura de cada frame
+    private BufferedImage[] imagens; // Array para armazenar as 6 imagens
+    private int frameAtual = 0; // Frame atual da animação (inicia parado)
+    private int largura, altura; // Largura e altura do jogador
     private int x, y; // Posição do jogador
     private boolean atirando = false; // Indica se o jogador está atirando
 
-    public Jogador(int x, int y, int larguraFrame, int alturaFrame, String caminhoSpritesheet) {
+    public Jogador(int x, int y, int largura, int altura, String[] caminhosImagens) {
         this.x = x;
         this.y = y;
-        this.larguraFrame = larguraFrame;
-        this.alturaFrame = alturaFrame;
+        this.largura = (int) (largura * 0.7); // Reduz o tamanho em 30%
+        this.altura = (int) (altura * 0.7); // Reduz o tamanho em 30%
 
-        try {
-            // Carrega o spritesheet
-            spritesheet = ImageIO.read(getClass().getResource(caminhoSpritesheet));
-            if (spritesheet == null) {
-                System.out.println("Erro: Spritesheet não carregado. Verifique o caminho: " + caminhoSpritesheet);
-                return;
+        // Carrega as imagens e redimensiona
+        imagens = new BufferedImage[6];
+        for (int i = 0; i < caminhosImagens.length; i++) {
+            try {
+                BufferedImage img = ImageIO.read(getClass().getResource(caminhosImagens[i]));
+                // Redimensiona a imagem para o novo tamanho
+                imagens[i] = new BufferedImage(this.largura, this.altura, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g2d = imagens[i].createGraphics();
+                g2d.drawImage(img, 0, 0, this.largura, this.altura, null);
+                g2d.dispose();
+                System.out.println("Imagem " + caminhosImagens[i] + " carregada e redimensionada com sucesso!");
+            } catch (Exception e) {
+                System.out.println("Erro ao carregar a imagem " + caminhosImagens[i] + ": " + e.getMessage());
             }
-            System.out.println("Spritesheet carregado com sucesso!");
-
-            // Verifica o tamanho do spritesheet
-            int larguraSpritesheet = spritesheet.getWidth();
-            int alturaSpritesheet = spritesheet.getHeight();
-            System.out.println("Tamanho do spritesheet: " + larguraSpritesheet + "x" + alturaSpritesheet);
-
-            // Divide o spritesheet em frames
-            int colunas = 3; // Número de colunas no spritesheet
-            int linhas = 3; // Número de linhas no spritesheet
-            frames = new BufferedImage[colunas * linhas]; // Total de frames
-
-            for (int linha = 0; linha < linhas; linha++) {
-                for (int coluna = 0; coluna < colunas; coluna++) {
-                    int frameX = coluna * larguraFrame;
-                    int frameY = linha * alturaFrame;
-
-                    // Verifica se as coordenadas estão dentro dos limites do spritesheet
-                    if (frameX + larguraFrame <= larguraSpritesheet && frameY + alturaFrame <= alturaSpritesheet) {
-                        int index = linha * colunas + coluna;
-                        frames[index] = spritesheet.getSubimage(frameX, frameY, larguraFrame, alturaFrame);
-                        System.out.println("Frame " + index + " extraído com sucesso: " + frames[index]);
-                    } else {
-                        System.out.println("Erro: Frame " + (linha * colunas + coluna) + " está fora dos limites do spritesheet.");
-                    }
-                }
-            }
-        } catch (Exception e) {
-            System.out.println("Erro ao carregar o spritesheet: " + e.getMessage());
         }
     }
 
     public void desenhar(Graphics g) {
-        if (frames == null) {
-            System.out.println("Erro: Frames não foram carregados.");
-            return;
+        if (imagens[frameAtual] != null) {
+            g.drawImage(imagens[frameAtual], x, y, null);
+        } else {
+            System.out.println("Erro: Frame atual é nulo. frameAtual = " + frameAtual);
         }
-
-        if (frameAtual < 0 || frameAtual >= frames.length || frames[frameAtual] == null) {
-            System.out.println("Erro: Frame atual é nulo ou inválido. frameAtual = " + frameAtual);
-            return;
-        }
-
-        // Desenha o frame atual
-        g.drawImage(frames[frameAtual], x, y, null);
-        System.out.println("Desenhando frame " + frameAtual + " na posição (" + x + ", " + y + ")");
     }
 
     // Método para atualizar o frame da animação
     public void atualizarFrame(int direcao, boolean atirando) {
         this.atirando = atirando;
 
-        // Define o frame padrão como "parado" (frame 4)
-        frameAtual = 4;
+        // Define o frame padrão como "parado" (frame 0)
+        frameAtual = 0;
 
         if (atirando) {
             // Atirando
             switch (direcao) {
                 case KeyEvent.VK_UP:
-                    frameAtual = 7; // Atirando enquanto anda para cima
+                    frameAtual = 4; // Atirando enquanto anda para cima
                     break;
                 case KeyEvent.VK_DOWN:
-                    frameAtual = 2; // Atirando enquanto anda para baixo
+                    frameAtual = 5; // Atirando enquanto anda para baixo
                     break;
                 default:
-                    frameAtual = 6; // Atirando parado
+                    frameAtual = 1; // Atirando parado
                     break;
             }
         } else {
             // Não está atirando
             switch (direcao) {
                 case KeyEvent.VK_UP:
-                    frameAtual = 1; // Andando para cima
+                    frameAtual = 2; // Andando para cima
                     break;
                 case KeyEvent.VK_DOWN:
                     frameAtual = 3; // Andando para baixo
@@ -390,9 +365,9 @@ class Jogador {
         }
 
         // Verifica se o frameAtual está dentro dos limites
-        if (frameAtual < 0 || frameAtual >= frames.length) {
+        if (frameAtual < 0 || frameAtual >= imagens.length) {
             System.out.println("Erro: frameAtual fora dos limites. frameAtual = " + frameAtual);
-            frameAtual = 4; // Define o frame "parado" como fallback
+            frameAtual = 0; // Define o frame "parado" como fallback
         }
     }
 
@@ -403,8 +378,8 @@ class Jogador {
 
     public void moverBaixo() {
         y += 10;
-        if (y > Toolkit.getDefaultToolkit().getScreenSize().height - alturaFrame) {
-            y = Toolkit.getDefaultToolkit().getScreenSize().height - alturaFrame;
+        if (y > Toolkit.getDefaultToolkit().getScreenSize().height - altura) {
+            y = Toolkit.getDefaultToolkit().getScreenSize().height - altura;
         }
     }
 
@@ -417,15 +392,15 @@ class Jogador {
     }
 
     public int getLargura() {
-        return larguraFrame;
+        return largura;
     }
 
     public int getAltura() {
-        return alturaFrame;
+        return altura;
     }
 
     public Rectangle getBounds() {
-        return new Rectangle(x, y, larguraFrame, alturaFrame);
+        return new Rectangle(x, y, largura, altura);
     }
 }
 
@@ -490,11 +465,11 @@ class Projetil {
 
     public void desenhar(Graphics g) {
         g.setColor(Color.YELLOW);
-        g.fillRect(x, y, largura, altura); // Projétil horizontal
+        g.fillRect(x, y, largura, altura); // Projétil menor
     }
 
     public void atualizar() {
-        x += 5; // Movimento para a direita
+        x += 15; // Movimento 50% mais rápido (anterior era 10)
     }
 
     public Rectangle getBounds() {
