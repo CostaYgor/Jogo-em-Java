@@ -74,7 +74,7 @@ public class Jogo extends JPanel implements KeyListener, Runnable {
         frame.add(this);
         frame.setVisible(true);
 
-        // Inicializa o jogador com as 6 imagens e tamanho reduzido em 30%
+        // Inicializa o jogador com as 6 imagens e tamanho reduzido em 5%
         String[] caminhosImagens = {
             "parado.png",
             "atirando.png",
@@ -83,7 +83,7 @@ public class Jogo extends JPanel implements KeyListener, Runnable {
             "atirando_cima.png",
             "atirando_baixo.png"
         };
-        jogador = new Jogador(larguraTela / 20, alturaTela / 2 - 43, 131, 124, caminhosImagens); // Tamanho reduzido em 30%
+        jogador = new Jogador(larguraTela / 20, alturaTela / 2 - 45, 131, 124, caminhosImagens); // Tamanho reduzido em 5%
 
         // Inicia a thread de atualização do jogo
         Thread thread = new Thread(this);
@@ -224,8 +224,8 @@ public class Jogo extends JPanel implements KeyListener, Runnable {
 
     private void spawnInimigos() {
         if (inimigos.size() < maxInimigos) {
-            int larguraInimigo = 35; // Largura do inimigo reduzida em 30%
-            int alturaInimigo = 35; // Altura do inimigo reduzida em 30%
+            int larguraInimigo = 37; // Largura do inimigo reduzida em 5%
+            int alturaInimigo = 37; // Altura do inimigo reduzida em 5%
 
             // Gera uma posição Y aleatória para o inimigo
             int y = random.nextInt(alturaTela - alturaInimigo);
@@ -304,8 +304,8 @@ class Jogador {
     public Jogador(int x, int y, int largura, int altura, String[] caminhosImagens) {
         this.x = x;
         this.y = y;
-        this.largura = (int) (largura * 0.7); // Reduz o tamanho em 30%
-        this.altura = (int) (altura * 0.7); // Reduz o tamanho em 30%
+        this.largura = (int) (largura * 0.95); // Reduz o tamanho em 5%
+        this.altura = (int) (altura * 0.95); // Reduz o tamanho em 5%
 
         // Carrega as imagens e redimensiona
         imagens = new BufferedImage[6];
@@ -469,7 +469,7 @@ class Projetil {
     }
 
     public void atualizar() {
-        x += 15; // Movimento 50% mais rápido (anterior era 10)
+        x += 20; // Movimento mais rápido (aumento de 33% em relação ao anterior de 15)
     }
 
     public Rectangle getBounds() {
