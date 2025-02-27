@@ -20,8 +20,9 @@ public class Jogo extends JPanel implements KeyListener, Runnable {
     private Random random;
     private int larguraTela;
     private int alturaTela;
-    private int maxInimigos = 5; // Número máximo de inimigos na tela
+    private int maxInimigos = 20; // Número máximo de inimigos na tela
     private Set<Integer> teclasPressionadas = new HashSet<>(); // Armazena as teclas pressionadas
+    private List<Explosao> explosoes;
 
     // Controle de disparos
     private int disparosRealizados = 0; // Contador de disparos
@@ -40,6 +41,7 @@ public class Jogo extends JPanel implements KeyListener, Runnable {
         random = new Random();
         projeteis = new ArrayList<>();
         inimigos = new ArrayList<>();
+        explosoes = new ArrayList<>();
 
         // Obtém o tamanho da tela
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -91,86 +93,97 @@ public class Jogo extends JPanel implements KeyListener, Runnable {
     }
 
     @Override
-    public void paintComponent(Graphics g) {
-        super.paintComponent(g);
+public void paintComponent(Graphics g) {
+    super.paintComponent(g);
 
-        // Desenha a imagem de fundo redimensionada
-        if (imagemFundo != null) {
-            g.drawImage(imagemFundo, 0, 0, getWidth(), getHeight(), this);
-        } else {
-            System.out.println("Imagem de fundo é nula no paintComponent.");
-        }
-
-        if (noMenu) {
-            // Exibe o menu inicial
-            g.setColor(Color.WHITE);
-            g.setFont(new Font("Arial", Font.BOLD, 30));
-            g.drawString("Aperte espaço para começar", larguraTela / 2 - 200, alturaTela / 2);
-        } else if (emJogo) {
-            // Exibe o jogo
-            jogador.desenhar(g);
-            for (Inimigo inimigo : inimigos) {
-                inimigo.desenhar(g);
-            }
-            for (Projetil projetil : projeteis) {
-                projetil.desenhar(g);
-            }
-
-            // Exibe mensagem de recarga
-            if (emRecarga) {
-                g.setColor(Color.RED);
-                g.drawString("Recarregando...", 20, 20);
-            }
-
-            // Exibe contador de munição acima do jogador
-            g.setColor(Color.WHITE);
-            g.drawString("Munição: " + (7 - disparosRealizados), jogador.getX(), jogador.getY() - 10);
-        } else {
-            // Exibe mensagem de fim de jogo
-            g.setColor(Color.WHITE);
-            g.drawString("Fim de Jogo", larguraTela / 2 - 50, alturaTela / 2);
-        }
+    // Desenha a imagem de fundo redimensionada
+    if (imagemFundo != null) {
+        g.drawImage(imagemFundo, 0, 0, getWidth(), getHeight(), this);
+    } else {
+        System.out.println("Imagem de fundo é nula no paintComponent.");
     }
 
-    public void atualizar() {
-        if (emJogo) {
-            // Verifica as teclas pressionadas e executa as ações correspondentes
-            int direcao = -1; // -1 indica que não está se movendo
-            if (teclasPressionadas.contains(KeyEvent.VK_UP)) {
-                jogador.moverCima();
-                direcao = KeyEvent.VK_UP;
-            }
-            if (teclasPressionadas.contains(KeyEvent.VK_DOWN)) {
-                jogador.moverBaixo();
-                direcao = KeyEvent.VK_DOWN;
-            }
-
-            // Verifica se o jogador está atirando
-            boolean atirando = teclasPressionadas.contains(KeyEvent.VK_SPACE);
-
-            // Atualiza o frame do jogador
-            jogador.atualizarFrame(direcao, atirando);
-
-            // Disparar projéteis
-            if (atirando) {
-                disparar();
-            }
-
-            // Atualiza inimigos e projéteis
-            for (Inimigo inimigo : inimigos) {
-                inimigo.atualizar();
-            }
-            for (Projetil projetil : projeteis) {
-                projetil.atualizar();
-            }
-
-            // Verifica colisões e spawn de inimigos
-            verificarColisoes();
-            spawnInimigos();
-            removerInimigosForaDaTela();
-            verificarRecarga();
+    if (noMenu) {
+        // Exibe o menu inicial
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Arial", Font.BOLD, 30));
+        g.drawString("Aperte espaço para começar", larguraTela / 2 - 200, alturaTela / 2);
+    } else if (emJogo) {
+        // Exibe o jogo
+        jogador.desenhar(g);
+        for (Inimigo inimigo : inimigos) {
+            inimigo.desenhar(g);
         }
+        for (Projetil projetil : projeteis) {
+            projetil.desenhar(g);
+        }
+        for (Explosao explosao : explosoes) {
+            explosao.desenhar(g);
+        }
+
+        // Exibe mensagem de recarga
+        if (emRecarga) {
+            g.setColor(Color.RED);
+            g.drawString("Recarregando...", 20, 20);
+        }
+
+        // Exibe contador de munição acima do jogador
+        g.setColor(Color.WHITE);
+        g.drawString("Munição: " + (7 - disparosRealizados), jogador.getX(), jogador.getY() - 10);
+    } else {
+        // Exibe mensagem de fim de jogo
+        g.setColor(Color.WHITE);
+        g.drawString("Fim de Jogo", larguraTela / 2 - 50, alturaTela / 2);
     }
+}
+
+public void atualizar() {
+    if (emJogo) {
+        // Verifica as teclas pressionadas e executa as ações correspondentes
+        int direcao = -1; // -1 indica que não está se movendo
+        if (teclasPressionadas.contains(KeyEvent.VK_UP)) {
+            jogador.moverCima();
+            direcao = KeyEvent.VK_UP;
+        }
+        if (teclasPressionadas.contains(KeyEvent.VK_DOWN)) {
+            jogador.moverBaixo();
+            direcao = KeyEvent.VK_DOWN;
+        }
+
+        // Verifica se o jogador está atirando
+        boolean atirando = teclasPressionadas.contains(KeyEvent.VK_SPACE);
+
+        // Atualiza o frame do jogador
+        jogador.atualizarFrame(direcao, atirando);
+
+        // Disparar projéteis
+        if (atirando) {
+            disparar();
+        }
+
+        // Atualiza inimigos e projéteis
+        for (Inimigo inimigo : inimigos) {
+            inimigo.atualizar();
+        }
+        for (Projetil projetil : projeteis) {
+            projetil.atualizar();
+        }
+
+        // Atualiza explosões
+        for (Explosao explosao : explosoes) {
+            explosao.atualizar();
+        }
+
+        // Remove explosões inativas
+        explosoes.removeIf(explosao -> !explosao.isAtiva());
+
+        // Verifica colisões e spawn de inimigos
+        verificarColisoes();
+        spawnInimigos();
+        removerInimigosForaDaTela();
+        verificarRecarga();
+    }
+}
 
     private void disparar() {
         long tempoAtual = System.currentTimeMillis();
@@ -208,11 +221,13 @@ public class Jogo extends JPanel implements KeyListener, Runnable {
                 if (projetil.getBounds().intersects(inimigo.getBounds())) {
                     projeteis.remove(projetil);
                     inimigos.remove(inimigo);
+                    // Cria uma explosão no local do inimigo
+                    explosoes.add(new Explosao(inimigo.getX(), inimigo.getY(), inimigo.getLargura(), inimigo.getAltura()));
                     break;
                 }
             }
         }
-
+    
         // Verifica se os inimigos chegaram ao jogador
         for (Inimigo inimigo : inimigos) {
             if (inimigo.getX() < larguraTela / 20) {
@@ -221,15 +236,25 @@ public class Jogo extends JPanel implements KeyListener, Runnable {
             }
         }
     }
+    
+    private boolean explosaoImagesLoaded() {
+        Iterable<BufferedImage> frames = null;
+        for (BufferedImage img : frames) {
+            if (img == null) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     private void spawnInimigos() {
         if (inimigos.size() < maxInimigos) {
-            int larguraInimigo = 37; // Largura do inimigo reduzida em 5%
-            int alturaInimigo = 37; // Altura do inimigo reduzida em 5%
-
+            int larguraInimigo = jogador.getLargura(); // Largura igual à do jogador
+            int alturaInimigo = jogador.getAltura();   // Altura igual à do jogador
+    
             // Gera uma posição Y aleatória para o inimigo
             int y = random.nextInt(alturaTela - alturaInimigo);
-
+    
             // Verifica se há espaço para spawnar o inimigo sem sobrepor outros
             boolean podeSpawnar = true;
             Rectangle novoInimigo = new Rectangle(larguraTela, y, larguraInimigo, alturaInimigo);
@@ -239,7 +264,7 @@ public class Jogo extends JPanel implements KeyListener, Runnable {
                     break;
                 }
             }
-
+    
             // Spawna o inimigo se houver espaço
             if (podeSpawnar) {
                 inimigos.add(new Inimigo(larguraTela, y, larguraInimigo, alturaInimigo));
@@ -409,19 +434,43 @@ class Inimigo {
     private int largura, altura;
     private Random random;
     private int direcaoY; // Controla o movimento em zigue-zague
+    private BufferedImage[] imagens; // Array para armazenar as 9 imagens
+    private int frameAtual = 0; // Frame atual da animação
+    private long ultimoTempoFrame; // Tempo do último frame
 
     public Inimigo(int x, int y, int largura, int altura) {
         this.x = x;
         this.y = y;
-        this.largura = largura;
-        this.altura = altura;
+        this.largura = largura; // Largura do inimigo igual à do jogador
+        this.altura = altura;   // Altura do inimigo igual à do jogador
         this.random = new Random();
         this.direcaoY = random.nextInt(3) - 1; // -1, 0 ou 1 (movimento aleatório)
+        this.ultimoTempoFrame = System.currentTimeMillis();
+
+        // Carrega as 9 imagens dos inimigos
+        imagens = new BufferedImage[9];
+        for (int i = 0; i < 9; i++) {
+            try {
+                BufferedImage img = ImageIO.read(getClass().getResource("inimigo" + (i + 1) + ".png"));
+                // Redimensiona a imagem para o novo tamanho
+                imagens[i] = new BufferedImage(largura, altura, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g2d = imagens[i].createGraphics();
+                g2d.drawImage(img, 0, 0, largura, altura, null);
+                g2d.dispose();
+                System.out.println("Imagem inimigo" + (i + 1) + ".png carregada e redimensionada com sucesso!");
+            } catch (Exception e) {
+                System.out.println("Erro ao carregar a imagem inimigo" + (i + 1) + ".png: " + e.getMessage());
+            }
+        }
     }
 
     public void desenhar(Graphics g) {
-        g.setColor(Color.RED);
-        g.fillRect(x, y, largura, altura); // Inimigos menores
+        if (imagens[frameAtual] != null) {
+            g.drawImage(imagens[frameAtual], x, y, largura, altura, null);
+        } else {
+            g.setColor(Color.RED);
+            g.fillRect(x, y, largura, altura); // Fallback caso as imagens não carreguem
+        }
     }
 
     public void atualizar() {
@@ -437,16 +486,32 @@ class Inimigo {
         if (random.nextInt(100) < 5) { // 5% de chance de mudar a direção
             direcaoY = random.nextInt(3) - 1;
         }
+
+        // Atualiza o frame da animação a cada 100ms
+        long tempoAtual = System.currentTimeMillis();
+        if (tempoAtual - ultimoTempoFrame >= 100) {
+            frameAtual = (frameAtual + 1) % 9; // Alterna entre as 9 imagens
+            ultimoTempoFrame = tempoAtual;
+        }
     }
 
     public int getX() {
         return x;
     }
 
+    public int getY() {
+        return y;
+    }
+
     public int getLargura() {
         return largura;
     }
 
+    public int getAltura() {
+        return altura;
+    }
+
+    // Método adicionado para retornar os limites do inimigo
     public Rectangle getBounds() {
         return new Rectangle(x, y, largura, altura);
     }
@@ -469,10 +534,60 @@ class Projetil {
     }
 
     public void atualizar() {
-        x += 20; // Movimento mais rápido (aumento de 33% em relação ao anterior de 15)
+        x += 25; 
     }
 
     public Rectangle getBounds() {
         return new Rectangle(x, y, largura, altura);
+    }
+}
+
+class Explosao {
+    private int x, y;
+    private int largura, altura;
+    private BufferedImage[] frames;
+    private int frameAtual;
+    private long ultimoTempoFrame;
+    private boolean ativa;
+
+    public Explosao(int x, int y, int largura, int altura) {
+        this.x = x;
+        this.y = y;
+        this.largura = largura;
+        this.altura = altura;
+        this.frames = new BufferedImage[7];
+        this.frameAtual = 0;
+        this.ultimoTempoFrame = System.currentTimeMillis();
+        this.ativa = true;
+    
+        // Carrega as imagens da explosão
+        for (int i = 0; i < 7; i++) {
+            try {
+                frames[i] = ImageIO.read(getClass().getResource("explosao" + (i + 1) + ".png"));
+            } catch (Exception e) {
+                System.out.println("Erro ao carregar a imagem explosao" + (i + 1) + ".png: " + e.getMessage());
+            }
+        }
+    }
+
+    public void desenhar(Graphics g) {
+        if (ativa && frames[frameAtual] != null) {
+            g.drawImage(frames[frameAtual], x, y, largura, altura, null);
+        }
+    }
+
+    public void atualizar() {
+        long tempoAtual = System.currentTimeMillis();
+        if (tempoAtual - ultimoTempoFrame >= 50) { // 50ms por frame
+            frameAtual++;
+            ultimoTempoFrame = tempoAtual;
+            if (frameAtual >= 7) {
+                ativa = false; // Finaliza a animação após 7 frames
+            }
+        }
+    }
+
+    public boolean isAtiva() {
+        return ativa;
     }
 }
